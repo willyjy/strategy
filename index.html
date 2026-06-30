@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Retail Analytics — Executive View</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --navy:#0f172a;--slate:#334155;--muted:#64748b;--border:#e2e8f0;--bg:#f1f5f9;--white:#fff;
+  --c1:#ef4444;--c1l:#fef2f2;--c1m:#fca5a5;
+  --c2:#2563eb;--c2l:#eff6ff;--c2m:#93c5fd;
+  --c3:#7c3aed;--c3l:#f5f3ff;--c3m:#c4b5fd;
+  --c4:#0891b2;--c4l:#ecfeff;--c4m:#67e8f9;
+  --ok:#16a34a;--okl:#f0fdf4;--okm:#86efac;
+  --warn:#d97706;--warnl:#fffbeb;
+  --r:10px;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--navy);font-size:14px;line-height:1.5}
+
+/* NAV */
+nav{background:var(--navy);display:flex;align-items:center;padding:0 20px;height:50px;gap:2px;position:sticky;top:0;z-index:99;overflow-x:auto;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav .brand{color:#f1f5f9;font-weight:900;font-size:13px;margin-right:16px;white-space:nowrap;flex-shrink:0}
+.tab{padding:6px 13px;border-radius:6px;font-size:12px;font-weight:600;color:#94a3b8;cursor:pointer;transition:all .15s;border:none;background:none;white-space:nowrap;flex-shrink:0}
+.tab:hover{color:#f1f5f9;background:rgba(255,255,255,.07)}
+.tab.active{color:#f1f5f9;background:rgba(255,255,255,.14)}
+.tab .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle}
+
+/* PANELS */
+.panel{display:none;padding:22px 28px 60px;max-width:1160px;margin:0 auto}
+.panel.active{display:block}
+
+/* HERO */
+.hero{background:linear-gradient(120deg,var(--navy) 0%,#1e3a5f 100%);border-radius:var(--r);padding:22px 28px;color:white;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.hero h1{font-size:19px;font-weight:900;margin-bottom:4px}
+.hero p{font-size:12px;color:rgba(255,255,255,.6);max-width:500px}
+.hero-pills{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px}
+.hero-pill{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.85)}
+.hero-stats{display:flex;gap:20px;flex-shrink:0}
+.hs .n{font-size:28px;font-weight:900;color:white;line-height:1}
+.hs .l{font-size:10px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.5px;margin-top:1px}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+
+/* KPI */
+.kpi-strip{display:flex;gap:10px;margin-bottom:14px}
+.kpi{flex:1;background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px}
+.kpi .kl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:3px}
+.kpi .kv{font-size:20px;font-weight:900;line-height:1;margin-bottom:2px}
+.kpi .kd{font-size:11px;font-weight:600}
+.kd.up{color:var(--ok)}.kd.dn{color:var(--c1)}.kd.nt{color:var(--muted)}
+
+/* CARD */
+.card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+.ct{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:10px}
+
+/* CHART */
+.cw{position:relative;margin-bottom:4px}
+.h180{height:180px}.h200{height:200px}.h220{height:220px}.h160{height:160px}
+.ccap{font-size:10px;color:var(--muted);text-align:center;font-style:italic;margin-bottom:10px}
+
+/* SECTION LABEL */
+.sl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:16px 0 10px}
+
+/* MODEL HEADER */
+.mhdr{border-radius:var(--r);padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:12px;border:1px solid var(--border)}
+.mhdr .mnum{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px}
+.mhdr h2{font-size:16px;font-weight:900;margin-bottom:3px}
+.mhdr p{font-size:12px;color:var(--muted)}
+.mtags{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+.mtag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:.3px}
+
+/* WORKFLOW */
+.wf{display:flex;align-items:stretch;margin:12px 0 16px}
+.ws{flex:1;min-width:0;background:var(--white);border:1px solid var(--border);border-right:none;padding:11px 10px;text-align:center;position:relative}
+.ws:first-child{border-radius:10px 0 0 10px}
+.ws:last-child{border-right:1px solid var(--border);border-radius:0 10px 10px 0}
+.ws::after{content:'→';position:absolute;right:-10px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);z-index:1;background:var(--bg);padding:0 2px}
+.ws:last-child::after{display:none}
+.ws.hl{background:var(--ws-bg,#eff6ff);border-color:var(--ws-bd,#93c5fd)}
+.wn{font-size:9px;font-weight:700;color:var(--muted);margin-bottom:2px;letter-spacing:.5px}
+.wt{font-size:11px;font-weight:800;margin-bottom:2px}
+.wd{font-size:10px;color:var(--muted);line-height:1.4}
+
+/* ACTION BOX */
+.ab{background:var(--navy);border-radius:8px;padding:12px 16px;margin-top:14px}
+.ab::before{content:'⚡ Action Output';display:block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#fbbf24;margin-bottom:5px}
+.ab p{font-size:12px;color:#e2e8f0;line-height:1.5}
+.ab ul{padding-left:14px}
+.ab li{font-size:12px;color:#e2e8f0;line-height:1.6;margin-bottom:2px}
+
+/* CHARTS SECTION */
+.charts-hdr{background:linear-gradient(90deg,var(--ch-a),var(--ch-b));border-radius:8px;padding:10px 16px;margin:16px 0 12px;color:white;display:flex;align-items:center;gap:10px}
+.charts-hdr h3{font-size:13px;font-weight:800}
+.charts-hdr p{font-size:11px;opacity:.8}
+.charts-hdr .ch-badge{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.25);border-radius:12px;padding:2px 9px;font-size:10px;font-weight:700;margin-left:auto;flex-shrink:0}
+
+/* SIGNAL */
+.sr{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;margin-bottom:7px;border:1px solid transparent}
+.sr.red{background:#fef2f2;border-color:#fca5a5}.sr.amber{background:#fffbeb;border-color:#fde68a}
+.sr.blue{background:#eff6ff;border-color:#93c5fd}.sr.green{background:#f0fdf4;border-color:#86efac}
+.sd{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sd.red{background:#ef4444}.sd.amber{background:#f59e0b}.sd.blue{background:#3b82f6}.sd.green{background:#22c55e}
+.st{font-size:12px;font-weight:700;width:190px;flex-shrink:0}
+.sdesc{font-size:11px;color:var(--muted);flex:1}
+.sa{font-size:11px;font-weight:700;text-align:right;flex-shrink:0;width:150px}
+.sa.red{color:#dc2626}.sa.amber{color:#d97706}.sa.blue{color:#2563eb}.sa.green{color:var(--ok)}
+
+/* MISC */
+.div{height:1px;background:var(--border);margin:16px 0}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700}
+.ck{display:flex;align-items:flex-start;gap:8px;padding:8px 12px;border-radius:7px;margin-bottom:6px;border:1px solid transparent;font-size:12px}
+.ck.ok{background:var(--okl);border-color:var(--okm)}.ck.no{background:#fef2f2;border-color:#fca5a5}.ck.warn{background:#fffbeb;border-color:#fde68a}
+.lb-w{width:70px;background:#e2e8f0;border-radius:4px;height:7px;display:inline-block;vertical-align:middle;margin-right:5px}
+.lb{height:7px;border-radius:4px}
+.rt{width:100%;border-collapse:collapse;font-size:12px}
+.rt th{background:var(--navy);color:#e2e8f0;padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.rt td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.rt tr:last-child td{border-bottom:none}
+.rt tr:hover td{background:#f8fafc}
+
+.prin{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:13px 15px;border-top:3px solid var(--ac)}
+.prin h4{font-size:13px;font-weight:800;margin-bottom:3px}
+.prin p{font-size:12px;color:var(--muted);line-height:1.5}
+.ladder{display:flex;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:10px 0}
+.rung{flex:1;padding:12px 11px;border-right:1px solid var(--border)}
+.rung:last-child{border-right:none}
+.rn{font-size:22px;font-weight:900;color:var(--border);line-height:1}
+.rl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin:2px 0 4px}
+.rq{font-size:12px;font-weight:800;margin-bottom:3px}
+.re{font-size:11px;color:var(--muted);font-style:italic}
+.rung.hl{background:var(--navy)}
+.rung.hl .rn{color:rgba(255,255,255,.08)}.rung.hl .rl{color:#fbbf24}.rung.hl .rq{color:white}.rung.hl .re{color:rgba(255,255,255,.55)}
+.seg-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin:10px 0}
+.sc{border-radius:8px;padding:10px 7px;text-align:center;border:1px solid var(--border);background:var(--white)}
+.sc .se{font-size:17px;margin-bottom:4px}
+.sc .sn{font-size:10px;font-weight:800;margin-bottom:2px;line-height:1.2}
+.sc .sa2{font-size:9px;color:var(--muted)}
+
+/* PHASE */
+.ph-row{display:flex;gap:0;margin:12px 0}
+.ph{flex:1;padding:14px 11px;position:relative;text-align:center;border:1px solid var(--border);border-right:none;background:var(--white)}
+.ph:first-child{border-radius:10px 0 0 10px}.ph:last-child{border-right:1px solid var(--border);border-radius:0 10px 10px 0}
+.ph::after{content:'→';position:absolute;right:-9px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);z-index:1;background:var(--bg);padding:0 2px}
+.ph:last-child::after{display:none}
+.phn{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+.pht{font-size:12px;font-weight:800;margin-bottom:2px}
+.phtime{font-size:10px;color:var(--muted);margin-bottom:6px}
+.phkey{font-size:10px;color:var(--muted);line-height:1.5}
+.ph-1{background:#fef2f2;border-color:#fca5a5}.ph-2{background:#fffbeb;border-color:#fde68a}
+.ph-3{background:#f0fdf4;border-color:#86efac}.ph-4{background:#eff6ff;border-color:#93c5fd}
+
+/* METHOD TABLES */
+.mth-tbl{width:100%;border-collapse:collapse;font-size:11px}
+.mth-tbl th{background:var(--navy);color:#e2e8f0;padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.mth-tbl td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+.mth-tbl tr:last-child td{border-bottom:none}
+.mth-tbl td:first-child{font-weight:700;background:#f8fafc}
+
+.stk{background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.stk-head{padding:9px 14px;font-size:12px;font-weight:800;background:var(--navy);color:white}
+.stk-body{padding:12px 14px}
+.stk-show::before{content:'✓ ';color:var(--ok);font-weight:700}
+.stk-hide::before{content:'✗ ';color:#ef4444;font-weight:700}
+.stk-show,.stk-hide{font-size:11px;margin-bottom:3px}
+.mock{border:2px dashed var(--border);border-radius:var(--r);overflow:hidden}
+.mock-row{display:flex;border-bottom:2px dashed var(--border)}
+.mock-row:last-child{border-bottom:none}
+.mock-cell{padding:13px 11px;font-size:11px;font-weight:600;border-right:2px dashed var(--border);flex:1;text-align:center;color:var(--slate)}
+.mock-cell:last-child{border-right:none}
+.mock-cell.dark{background:var(--navy);color:white;font-weight:700;font-size:12px}
+.dd-head{padding:8px 14px;font-size:11px;font-weight:800}
+.dd-head.do{background:#f0fdf4;color:var(--ok)}.dd-head.dont{background:#fef2f2;color:#dc2626}
+.dd-item{padding:6px 14px;font-size:11px;border-bottom:1px solid var(--border);color:var(--slate)}
+.dd-item:last-child{border-bottom:none}
+
+@media(max-width:860px){.g2,.g3,.g4{grid-template-columns:1fr}.seg-grid{grid-template-columns:repeat(4,1fr)}.panel{padding:16px 16px 50px}.kpi-strip{flex-wrap:wrap}.hero{flex-direction:column}}
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="brand">Analytics</span>
+  <button class="tab active" onclick="show('ov',this)"><span class="dot" style="background:#94a3b8"></span>Overview</button>
+  <button class="tab" onclick="show('m1',this)"><span class="dot" style="background:#ef4444"></span>Forecasting</button>
+  <button class="tab" onclick="show('m2',this)"><span class="dot" style="background:#2563eb"></span>Segmentation</button>
+  <button class="tab" onclick="show('m3',this)"><span class="dot" style="background:#7c3aed"></span>Uplift + CLV</button>
+  <button class="tab" onclick="show('m4',this)"><span class="dot" style="background:#0891b2"></span>Affinity</button>
+  <button class="tab" onclick="show('pr',this)"><span class="dot" style="background:#d97706"></span>Pricing</button>
+  <button class="tab" onclick="show('sig',this)"><span class="dot" style="background:#f59e0b"></span>Signals</button>
+  <button class="tab" onclick="show('cm',this)"><span class="dot" style="background:#16a34a"></span>Communicate</button>
+  <button class="tab" onclick="show('mth',this)"><span class="dot" style="background:#8b5cf6"></span>Methodology</button>
+</nav>
+
+<!-- ═══ OVERVIEW ═══════════════════════════════════════════════════ -->
+<div class="panel active" id="p-ov">
+  <div class="hero">
+    <div>
+      <h1>Retail &amp; Marketing Analytics Framework</h1>
+      <p>Omnichannel · ML-powered · Action-first. Every model feeds a decision. Every output has an owner and a deadline.</p>
+      <div class="hero-pills"><span class="hero-pill">Omnichannel</span><span class="hero-pill">4 Core Models</span><span class="hero-pill">7 Segments · 100 Variables</span><span class="hero-pill">Early Warning Signals</span></div>
+    </div>
+    <div class="hero-stats">
+      <div class="hs"><div class="n">4</div><div class="l">Models</div></div>
+      <div class="hs"><div class="n">7</div><div class="l">Segments</div></div>
+      <div class="hs"><div class="n">100</div><div class="l">Variables</div></div>
+    </div>
+  </div>
+  <div class="kpi-strip">
+    <div class="kpi"><div class="kl">Revenue (8W)</div><div class="kv" style="color:var(--c1)">$3.74M</div><div class="kd up">↑ +5.8% vs prior</div></div>
+    <div class="kpi"><div class="kl">Avg Order Value</div><div class="kv" style="color:var(--c1)">$76.40</div><div class="kd dn">↓ −4.5% vs target</div></div>
+    <div class="kpi"><div class="kl">Forecast Accuracy</div><div class="kv" style="color:var(--ok)">92.6%</div><div class="kd nt">MAPE 7.4% ✓</div></div>
+    <div class="kpi"><div class="kl">Active Customers</div><div class="kv" style="color:var(--c2)">39,600</div><div class="kd up">↑ +1,240 vs Q1</div></div>
+    <div class="kpi"><div class="kl">Campaign ROI</div><div class="kv" style="color:var(--ok)">3.8×</div><div class="kd up">↑ vs 1.9× baseline</div></div>
+  </div>
+  <div class="g2" style="margin-bottom:14px">
+    <div class="card">
+      <div class="ct">Revenue — 12 Week Trend</div>
+      <div class="cw h220"><canvas id="ov-rev"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ct">Model Decision Coverage</div>
+      <div class="cw h220"><canvas id="ov-cov"></canvas></div>
+    </div>
+  </div>
+  <div class="g2" style="margin-bottom:14px">
+    <div class="card">
+      <div class="ct">Segment Size vs Avg CLV 12M</div>
+      <div class="cw h200"><canvas id="ov-seg"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ct">Signal Alert Status — This Week</div>
+      <div style="margin-top:4px">
+        <div class="sr red"><div class="sd red"></div><div class="st">Revenue Anomaly</div><div class="sdesc">W5 supply disruption — resolved</div><div class="sa red">Monitor</div></div>
+        <div class="sr amber"><div class="sd amber"></div><div class="st">AOV Compression</div><div class="sdesc">Down 4.5% — review discount depth</div><div class="sa amber">Cap discounts 20%</div></div>
+        <div class="sr amber"><div class="sd amber"></div><div class="st">Champion Drift</div><div class="sdesc">180 migrated to At-Risk this quarter</div><div class="sa amber">Win-back live</div></div>
+        <div class="sr green"><div class="sd green"></div><div class="st">Affinity Breakout</div><div class="sdesc">Coffee→Beans Lift 6.2×</div><div class="sa green">Bundle deployed</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="sl">Insight Hierarchy — Every Output Follows This</div>
+  <div class="ladder">
+    <div class="rung"><div class="rn">01</div><div class="rl">What Happened</div><div class="rq">What is the data saying?</div><div class="re">"Revenue down 12% vs last week."</div></div>
+    <div class="rung" style="background:#fffbeb"><div class="rn" style="color:#fde68a">02</div><div class="rl">Why It Happened</div><div class="rq">What drove the change?</div><div class="re">"40% drop in repeat orders, Segment C."</div></div>
+    <div class="rung" style="background:#eff6ff"><div class="rn" style="color:#bfdbfe">03</div><div class="rl">What Will Happen</div><div class="rq">What does the model predict?</div><div class="re">"18% more churn if no action."</div></div>
+    <div class="rung hl"><div class="rn">04</div><div class="rl">⚡ What To Do</div><div class="rq">Exact next step?</div><div class="re">"Win-back: 2,400 at-risk by Friday."</div></div>
+  </div>
+  <div class="g4" style="margin-top:14px">
+    <div class="prin" style="--ac:var(--c1)"><h4>Insight First</h4><p>Lead with the decision, not the data.</p></div>
+    <div class="prin" style="--ac:var(--c2)"><h4>One Truth Source</h4><p>All models share a single data layer.</p></div>
+    <div class="prin" style="--ac:var(--c3)"><h4>Signal Before Crisis</h4><p>Alerts fire before the weekly report.</p></div>
+    <div class="prin" style="--ac:var(--c4)"><h4>Layperson-Ready</h4><p>Every output has a plain-English action card.</p></div>
+  </div>
+</div>
+
+<!-- ═══ M1: FORECASTING ════════════════════════════════════════════ -->
+<div class="panel" id="p-m1">
+  <div class="mhdr" style="background:var(--c1l);border-color:var(--c1m)">
+    <span style="font-size:24px">📈</span>
+    <div>
+      <div class="mnum" style="color:var(--c1)">Model 01</div>
+      <h2>Sales Forecasting &amp; AOV Intelligence</h2>
+      <p>Predict revenue, volume, and average order value at SKU, category, and channel level. Detect demand shifts before they cascade.</p>
+      <div class="mtags">
+        <span class="mtag" style="background:var(--c1l);color:var(--c1);border:1px solid var(--c1m)">SARIMAX</span>
+        <span class="mtag" style="background:var(--c1l);color:var(--c1);border:1px solid var(--c1m)">ARIMAX</span>
+        <span class="mtag" style="background:var(--c1l);color:var(--c1);border:1px solid var(--c1m)">LASSO</span>
+        <span class="mtag" style="background:var(--c1l);color:var(--c1);border:1px solid var(--c1m)">Elastic Net</span>
+        <span class="mtag" style="background:var(--c1l);color:var(--c1);border:1px solid var(--c1m)">STL Decomp</span>
+        <span class="mtag" style="background:var(--c1l);color:var(--c1);border:1px solid var(--c1m)">Prophet</span>
+      </div>
+    </div>
+  </div>
+  <div class="kpi-strip">
+    <div class="kpi"><div class="kl">4W Forecast Revenue</div><div class="kv" style="color:var(--c1)">$2.09M</div><div class="kd up">↑ +6.2%</div></div>
+    <div class="kpi"><div class="kl">Forecast Accuracy</div><div class="kv" style="color:var(--ok)">92.6%</div><div class="kd nt">MAPE 7.4% — Target &lt;10% ✓</div></div>
+    <div class="kpi"><div class="kl">Current AOV</div><div class="kv" style="color:var(--c1)">$76.40</div><div class="kd dn">↓ −4.5% — Watch</div></div>
+    <div class="kpi"><div class="kl">Top Demand Driver</div><div class="kv" style="font-size:15px;margin-top:4px">Payday</div><div class="kd nt">+18% lift on payweeks</div></div>
+  </div>
+  <div class="wf">
+    <div class="ws"><div class="wn">01</div><div class="wt">Ingest</div><div class="wd">POS + eComm + loyalty → unified time series</div></div>
+    <div class="ws hl" style="--ws-bg:var(--c1l);--ws-bd:var(--c1m)"><div class="wn">02</div><div class="wt">STL Decompose</div><div class="wd">Separate trend, season, residual. Flag breaks</div></div>
+    <div class="ws"><div class="wn">03</div><div class="wt">Model Select</div><div class="wd">Auto-ARIMA CV picks best per SKU/category</div></div>
+    <div class="ws hl" style="--ws-bg:var(--c1l);--ws-bd:var(--c1m)"><div class="wn">04</div><div class="wt">Forecast + CI</div><div class="wd">Point forecast + 80/95% CI per horizon</div></div>
+    <div class="ws"><div class="wn">05</div><div class="wt">Anomaly Flag</div><div class="wd">Residuals &gt;2σ → classify cause</div></div>
+    <div class="ws hl" style="--ws-bg:var(--okl);--ws-bd:var(--okm)"><div class="wn">06</div><div class="wt">⚡ Action</div><div class="wd">Reorder · promo timing · price review</div></div>
+  </div>
+
+  <div class="charts-hdr" style="--ch-a:#b91c1c;--ch-b:var(--c1)">
+    <span style="font-size:16px">📊</span>
+    <div><h3>7 Charts for Your Consideration</h3><p>Mock data — Footwear · Jun 2026</p></div>
+    <span class="ch-badge">MOCK DATA</span>
+  </div>
+
+  <div class="g2" style="margin-bottom:14px">
+    <div class="card">
+      <div class="ct">① Revenue Forecast vs Actual — 12 Weeks (with 80% CI)</div>
+      <div class="cw h220"><canvas id="m1c1"></canvas></div>
+      <div class="ccap">Shaded = confidence interval. Dashed = forecast. W5 anomaly flagged at 2.4σ — supply disruption, not demand.</div>
+    </div>
+    <div class="card">
+      <div class="ct">② Revenue by Channel — 8 Weeks (Online / Offline / Click &amp; Collect)</div>
+      <div class="cw h220"><canvas id="m1c2"></canvas></div>
+      <div class="ccap">Online recovering fastest post-W5. Click &amp; Collect stable. Offline most impacted by supply disruption.</div>
+    </div>
+  </div>
+  <div class="g2" style="margin-bottom:14px">
+    <div class="card">
+      <div class="ct">③ AOV Trend vs $79 Target — 8 Weeks</div>
+      <div class="cw h200"><canvas id="m1c3"></canvas></div>
+      <div class="ccap">Red bars = below target. Promo mix shift (+9pp promotional units) is primary driver of compression.</div>
+    </div>
+    <div class="card">
+      <div class="ct">④ AOV Decomposition — Units × Price × Mix Contribution</div>
+      <div class="cw h200"><canvas id="m1c4"></canvas></div>
+      <div class="ccap">Stacked bars show how each component contributes to total AOV. Mix shift (green) declining W5 onwards.</div>
+    </div>
+  </div>
+  <div class="g3" style="margin-bottom:14px">
+    <div class="card">
+      <div class="ct">⑤ LASSO Feature Importance — Top 5 Demand Drivers</div>
+      <div class="cw h200"><canvas id="m1c5"></canvas></div>
+      <div class="ccap">Absolute LASSO coefficients after penalised regression. Payday cycle dominates.</div>
+    </div>
+    <div class="card">
+      <div class="ct">⑥ MAPE by Forecast Horizon — Accuracy Decay</div>
+      <div class="cw h200"><canvas id="m1c6"></canvas></div>
+      <div class="ccap">Accuracy degrades with horizon length. Alert threshold (15%) shown. 12W horizon exceeds — use 4W for operational decisions.</div>
+    </div>
+    <div class="card">
+      <div class="ct">⑦ Anomaly Z-Score Timeline — Demand Shock Detection</div>
+      <div class="cw h200"><canvas id="m1c7"></canvas></div>
+      <div class="ccap">Z-score of residuals. Red line = 2σ alert threshold. W5 spike (2.9σ) triggered automatic classification workflow.</div>
+    </div>
+  </div>
+  <div class="ab"><ul>
+    <li>W5 anomaly traced to supply disruption — not demand weakness. Forecast corrected; exogenous variable updated.</li>
+    <li>AOV below target 3 consecutive weeks: cap discount depth at 20%, review promo mix. MAPE within target for 4W horizon — extend to category-level scoring.</li>
+  </ul></div>
+</div>
+
+<!-- ═══ M2: SEGMENTATION ═══════════════════════════════════════════ -->
+<div class="panel" id="p-m2">
+  <div class="mhdr" style="background:var(--c2l);border-color:var(--c2m)">
+    <span style="font-size:24px">🧩</span>
+    <div>
+      <div class="mnum" style="color:var(--c2)">Model 02</div>
+      <h2>Customer Segmentation — K-Prototype · 100 Variables</h2>
+      <p>7 behavioural segments across transactional, engagement, affinity, CLV, channel, and temporal dimensions. Beyond demographics.</p>
+      <div class="mtags">
+        <span class="mtag" style="background:var(--c2l);color:var(--c2);border:1px solid var(--c2m)">K-Prototype</span>
+        <span class="mtag" style="background:var(--c2l);color:var(--c2);border:1px solid var(--c2m)">PCA Reduction</span>
+        <span class="mtag" style="background:var(--c2l);color:var(--c2);border:1px solid var(--c2m)">UMAP Visualisation</span>
+        <span class="mtag" style="background:var(--c2l);color:var(--c2);border:1px solid var(--c2m)">Silhouette Score</span>
+        <span class="mtag" style="background:var(--c2l);color:var(--c2);border:1px solid var(--c2m)">Davies-Bouldin</span>
+      </div>
+    </div>
+  </div>
+  <div class="kpi-strip">
+    <div class="kpi"><div class="kl">Total Customers</div><div class="kv" style="color:var(--c2)">39,600</div><div class="kd up">↑ +1,240 vs Q1</div></div>
+    <div class="kpi"><div class="kl">Champions</div><div class="kv" style="color:#d69e2e">2,400</div><div class="kd dn">↓ −180 migrated ⚠</div></div>
+    <div class="kpi"><div class="kl">Champion Avg CLV</div><div class="kv" style="color:var(--ok)">$1,850</div><div class="kd up">↑ +$120 vs Q1</div></div>
+    <div class="kpi"><div class="kl">At-Risk Customers</div><div class="kv" style="color:var(--c1)">3,100</div><div class="kd dn">↑ +180 — Alert</div></div>
+    <div class="kpi"><div class="kl">Silhouette Score</div><div class="kv" style="color:var(--ok)">0.71</div><div class="kd nt">k=7 optimal</div></div>
+  </div>
+  <div class="wf">
+    <div class="ws"><div class="wn">01</div><div class="wt">Feature Build</div><div class="wd">100 variables across 7 blocks of behaviour</div></div>
+    <div class="ws hl" style="--ws-bg:var(--c2l);--ws-bd:var(--c2m)"><div class="wn">02</div><div class="wt">PCA Reduction</div><div class="wd">100 → 20 components, 85% variance retained</div></div>
+    <div class="ws"><div class="wn">03</div><div class="wt">K-Prototype</div><div class="wd">Mixed-type clustering, k=5–10 tested</div></div>
+    <div class="ws hl" style="--ws-bg:var(--c2l);--ws-bd:var(--c2m)"><div class="wn">04</div><div class="wt">Label + Profile</div><div class="wd">Name each segment. Compute avg CLV, churn, channel</div></div>
+    <div class="ws"><div class="wn">05</div><div class="wt">Migration Track</div><div class="wd">Monthly re-cluster. Flag threshold crossings</div></div>
+    <div class="ws hl" style="--ws-bg:var(--okl);--ws-bd:var(--okm)"><div class="wn">06</div><div class="wt">⚡ Action</div><div class="wd">Each segment: one brief · one channel · one metric</div></div>
+  </div>
+
+  <div class="charts-hdr" style="--ch-a:#1d4ed8;--ch-b:var(--c2)">
+    <span style="font-size:16px">📊</span>
+    <div><h3>7 Charts for Your Consideration</h3><p>Q2 2026 · 39,600 customers · Silhouette 0.71</p></div>
+    <span class="ch-badge">MOCK DATA</span>
+  </div>
+
+  <div class="g2" style="margin-bottom:14px">
+    <div class="card">
+      <div class="ct">① Segment Size vs Avg CLV 12M</div>
+      <div class="cw h220"><canvas id="m2c1"></canvas></div>
+      <div class="ccap">Bars = customer count (left axis). Line = avg CLV (right). Champions are 6% of base but 34% of revenue.</div>
+    </div>
+    <div class="card">
+      <div class="ct">② Segment Migration Q1 → Q2 (Net Customer Movement)</div>
+      <div class="cw h220"><canvas id="m2c2"></canvas></div>
+      <div class="ccap">Green = segment grew. Red = segment shrank. New Acquires growth (+1,240) offset by Champion outflow (−180).</div>
+    </div>
+  </div>
+  <div class="g2" style="margin-bottom:14px">
+    <div class="card">
+      <div class="ct">③ Channel Mix by Segment (Online / Offline / App)</div>
+      <div class="cw h220"><canvas id="m2c3"></canvas></div>
+      <div class="ccap">New Acquires skew strongly digital (68%). Champions are omnichannel. Tailor campaign channel by segment.</div>
+    </div>
+    <div class="card">
+      <div class="ct">④ CLV Percentile Bands by Segment (P25 / Median / P75)</div>
+      <div class="cw h220"><canvas id="m2c4"></canvas></div>
+      <div class="ccap">Width of band shows CLV spread within each segment. Champions have wide variance — top customers are extremely valuable.</div>
+    </div>
+  </div>
+  <div class="g3" style="margin-bottom:14px">
+    <div class="card">
+      <div class="ct">⑤ Churn Risk Score by Segment</div>
+      <div class="cw h200"><canvas id="m2c5"></canvas></div>
+      <div class="ccap">Dormant (72%) and At-Risk (45%) require immediate win-back focus. Champions stable at 8%.</div>
+    </div>
+    <div class="card">
+      <div class="ct">⑥ Revenue Contribution by Segment</div>
+      <div class="cw h200"><canvas id="m2c6"></canvas></div>
+      <div class="ccap">Champions (6% of customers) generate 34% of revenue. Promo Hunters (21%) generate only 9% — high cost-to-serve.</div>
+    </div>
+    <div class="card">
+      <div class="ct">⑦ Silhouette Score by k — Optimal Cluster Selection</div>
+      <div class="cw h200"><canvas id="m2c7"></canvas></div>
+      <div class="ccap">k=7 selected at Silhouette peak (0.71). Beyond k=7 scores decline — more clusters add noise, not insight.</div>
+    </div>
+  </div>
+
+  <div class="seg-grid">
+    <div class="sc" style="border-top:3px solid #d69e2e"><div class="se">👑</div><div class="sn">Champion Loyalists</div><div class="sa2">Protect + Deepen</div></div>
+    <div class="sc" style="border-top:3px solid #16a34a"><div class="se">📈</div><div class="sn">HV Growers</div><div class="sa2">Accelerate</div></div>
+    <div class="sc" style="border-top:3px solid #2563eb"><div class="se">🎯</div><div class="sn">Loyal Narrow</div><div class="sa2">Expand Breadth</div></div>
+    <div class="sc" style="border-top:3px solid #f59e0b"><div class="se">🏷️</div><div class="sn">Promo Hunters</div><div class="sa2">Manage Margin</div></div>
+    <div class="sc" style="border-top:3px solid #f97316"><div class="se">⚠️</div><div class="sn">Drifting At-Risk</div><div class="sa2">Win-Back Now</div></div>
+    <div class="sc" style="border-top:3px solid #ef4444"><div class="se">💤</div><div class="sn">Dormant Churned</div><div class="sa2">Selective Only</div></div>
+    <div class="sc" style="border-top:3px solid #8b5cf6"><div class="se">🌱</div><div class="sn">New Acquires</div><div class="sa2">Onboard + Convert</div></div>
+  </div>
+  <div class="ab"><ul>
+    <li><strong>Alert:</strong> 180 Champions migrated to At-Risk this quarter. Launch personalised win-back immediately — historical rate 44%.</li>
+    <li>New Acquires (24% of base) represent the highest CLV growth lever. Every 10% improvement in 90-day conversion = $2.1M additional CLV.</li>
+  </ul></div>
+</div>
+
+<!-- ═══ M3: UPLIFT + CLV ═══════════════════════════════════════════ -->
+<div class="panel" id="p-m3">
+  <div class="mhdr" style="background:var(--c3l);border-color:var(--c3m)">
+    <span style="font-size:24px">🎯</span>
+    <div>
+      <div class="mnum" style="color:var(--c3)">Model 03</div>
+      <h2>Campaign Uplift + BTYD / CLV</h2>
+      <p>Measure true campaign incrementality. Predict how long each customer remains active and their 12/36-month spend value.</p>
+      <div class="mtags">
+        <span class="mtag" style="background:var(--c3l);color:var(--c3);border:1px solid var(--c3m)">Random Forest Uplift</span>
+        <span class="mtag" style="background:var(--c3l);color:var(--c3);border:1px solid var(--c3m)">T-Learner / X-Learner</span>
+        <span class="mtag" style="background:var(--c3l);color:var(--c3);border:1px solid var(--c3m)">BG/NBD</span>
+        <span class="mtag" style="background:var(--c3l);color:var(--c3);border:1px solid var(--c3m)">Gamma-Gamma</span>
+        <span class="mtag" style="background:var(--c3l);color:var(--c3);border:1px solid var(--c3m)">Qini / AUUC</span>
+      </div>
+    </div>
+  </div>
+  <div class="kpi-strip">
+    <div class="kpi"><div class="kl">Persuadables (Send)</div><div class="kv" style="color:var(--ok)">5,152</div><div class="kd nt">28% of eligible base</div></div>
+    <div class="kpi"><div class="kl">Discount Cost Saved</div><div class="kv" style="color:var(--ok)">$18,770</div><div class="kd nt">Sure Things excluded</div></div>
+    <div class="kpi"><div class="kl">Predicted Campaign ROI</div><div class="kv" style="color:var(--ok)">3.8×</div><div class="kd up">↑ vs 1.9× no-model</div></div>
+    <div class="kpi"><div class="kl">At-Risk Alive Prob.</div><div class="kv" style="color:var(--warn)">57%</div><div class="kd dn">Below 60% alert threshold</div></div>
+  </div>
+  <div class="wf">
+    <div class="ws"><div class="wn">01</div><div class="wt">Holdout Design</div><div class="wd">Random treatment/control split before campaign</div></div>
+    <div class="ws hl" style="--ws-bg:var(--c3l);--ws-bd:var(--c3m)"><div class="wn">02</div><div class="wt">Uplift Model</div><div class="wd">RF T-Learner trains on past responses</div></div>
+    <div class="ws"><div class="wn">03</div><div class="wt">Score + Classify</div><div class="wd">Each customer scored → 4-quadrant assignment</div></div>
+    <div class="ws hl" style="--ws-bg:var(--c3l);--ws-bd:var(--c3m)"><div class="wn">04</div><div class="wt">BG/NBD + Γ-Γ</div><div class="wd">Predict purchase frequency × spend = CLV</div></div>
+    <div class="ws"><div class="wn">05</div><div class="wt">Tier + Alert</div><div class="wd">Assign CLV tier. Alive prob &lt;60% → escalation</div></div>
+    <div class="ws hl" style="--ws-bg:var(--okl);--ws-bd:var(--okm)"><div class="wn">06</div><div class="wt">⚡ Action</div><div class="wd">Persuadables get offer · Others excluded/escalated</div></div>
+  </div>
+
+  <div class="charts-hdr" style="--ch-a:#5b21b6;--ch-b:var(--c3)">
+    <span style="font-size:16px">📊</span>
+    <div><h3>7 Charts for Your Consideration</h3><p>June Loyalty Campaign · Eligible: 18,400</p></div>
+    <span class="ch-badge">MOCK DATA</span>
+  </div>
+
+  <div class="g2" style="margin-bottom:14px">
+    <div class="card">
+      <div class="ct">① Uplift 4-Quadrant — Campaign Audience Distribution</div>
+      <div class="cw h220"><canvas id="m3c1"></canvas></div>
+      <div class="ccap">Only Persuadables (28%) receive the campaign. Sure Things and Sleeping Dogs excluded — saving discount spend and avoiding churn triggers.</div>
+    </div>
+    <div class="card">
+      <div class="ct">② Qini Curve — Uplift Model vs Random Targeting</div>
+      <div class="cw h220"><canvas id="m3c2"></canvas></div>
+      <div class="ccap">Area between model curve and diagonal = Qini coefficient (0.42). The steeper the early curve, the better the model concentrates persuadables at the top.</div>
+    </div>
+  </div>
+  <div class="g2" style="margin-bottom:14px">
+    <div class="card">
+      <div class="ct">③ CLV Tiers — Predicted 12M vs 36M Value</div>
+      <div class="cw h200"><canvas id="m3c3"></canvas></div>
+      <div class="ccap">Tier 1 (top 20%) generates 68% of total predicted revenue. Tier 3 (bottom 40%) warrants low-cost automated journeys only.</div>
+    </div>
+    <div class="card">
+      <div class="ct">④ Campaign ROI — Uplift Model vs No-Model Baseline (4 Campaigns)</div>
+      <div class="cw h200"><canvas id="m3c4"></canvas></div>
+      <div class="ccap">Model consistently doubles campaign ROI by concentrating spend on Persuadables and eliminating Sure Thing discounts.</div>
+    </div>
+  </div>
+  <div class="g3" style="margin-bottom:14px">
+    <div class="card">
+      <div class="ct">⑤ Alive Probability by Segment</div>
+      <div class="cw h200"><canvas id="m3c5"></canvas></div>
+      <div class="ccap">Red = below 60% alert threshold. At-Risk (57%) triggers win-back escalation protocol immediately.</div>
+    </div>
+    <div class="card">
+      <div class="ct">⑥ Win-Back Success Rate by Segment</div>
+      <div class="cw h200"><canvas id="m3c6"></canvas></div>
+      <div class="ccap">Champions have highest win-back rate (44%) — fastest ROI for reactivation spend. Dormant drops to 8% — selective only.</div>
+    </div>
+    <div class="card">
+      <div class="ct">⑦ Incremental Revenue — 6 Campaigns (Uplift-Driven)</div>
+      <div class="cw h200"><canvas id="m3c7"></canvas></div>
+      <div class="ccap">Incremental revenue growing campaign-over-campaign as model learns from prior response data. C6 highest at $142K.</div>
+    </div>
+  </div>
+  <div class="ab"><ul>
+    <li><strong>Send list:</strong> 5,152 Persuadables. Offer: 15% off, 7-day window. Expected incremental revenue: $196,000.</li>
+    <li>3,100 At-Risk customers (alive prob 57%) → escalate to personalised win-back journey, not discount campaign. Do not include in main send.</li>
+  </ul></div>
+</div>
+
+<!-- ═══ M4: AFFINITY ═══════════════════════════════════════════════ -->
+<div class="panel" id="p-m4">
+  <div class="mhdr" style="background:var(--c4l);border-color:var(--c4m)">
+    <span style="font-size:24px">🔗</span>
+    <div>
+      <div class="mnum" style="color:var(--c4)">Model 04</div>
+      <h2>Product Affinity — FP-Growth Association Rules</h2>
+      <p>Uncover which products are bought together, which drive basket expansion, and where to deploy recommendations across the omnichannel journey.</p>
+      <div class="mtags">
+        <span class="mtag" style="background:var(--c4l);color:var(--c4);border:1px solid var(--c4m)">FP-Growth</span>
+        <span class="mtag" style="background:var(--c4l);color:var(--c4);border:1px solid var(--c4m)">Support / Confidence / Lift</span>
+        <span class="mtag" style="background:var(--c4l);color:var(--c4);border:1px solid var(--c4m)">Conviction Score</span>
+        <span class="mtag" style="background:var(--c4l);color:var(--c4);border:1px solid var(--c4m)">Min Support 0.5%</span>
+      </div>
+    </div>
+  </div>
+  <div class="kpi-strip">
+    <div class="kpi"><div class="kl">Rules Generated</div><div class="kv" style="color:var(--c4)">1,847</div><div class="kd nt">After min-support filter</div></div>
+    <div class="kpi"><div class="kl">Actionable (Lift &gt;1.5)</div><div class="kv" style="color:var(--c4)">312</div><div class="kd up">↑ +28 new this week</div></div>
+    <div class="kpi"><div class="kl">Bundle Candidates (Lift &gt;5)</div><div class="kv" style="color:var(--ok)">14</div><div class="kd up">3 new → review</div></div>
+    <div class="kpi"><div class="kl">AOV Uplift (Rules Active)</div><div class="kv" style="color:var(--ok)">+$8.20</div><div class="kd up">Per triggered transaction</div></div>
+  </div>
+  <div class="wf">
+    <div class="ws"><div class="wn">01</div><div class="wt">Transaction Build</div><div class="wd">All POS + eComm baskets → item set format</div></div>
+    <div class="ws hl" style="--ws-bg:var(--c4l);--ws-bd:var(--c4m)"><div class="wn">02</div><div class="wt">FP-Growth</div><div class="wd">Mine frequent itemsets. Min support 0.5%</div></div>
+    <div class="ws"><div class="wn">03</div><div class="wt">Rule Generation</div><div class="wd">Compute Support, Confidence, Lift, Conviction</div></div>
+    <div class="ws hl" style="--ws-bg:var(--c4l);--ws-bd:var(--c4m)"><div class="wn">04</div><div class="wt">Filter + Rank</div><div class="wd">Apply thresholds. Global vs segment-specific rules</div></div>
+    <div class="ws"><div class="wn">05</div><div class="wt">Channel Map</div><div class="wd">PDP · Cart · Post-purchase · In-store · App</div></div>
+    <div class="ws hl" style="--ws-bg:var(--okl);--ws-bd:var(--okm)"><div class="wn">06</div><div class="wt">⚡ Action</div><div class="wd">Weekly top-10 rules to merch, digital, store teams</div></div>
+  </div>
+
+  <div class="charts-hdr" style="--ch-a:#0e7490;--ch-b:var(--c4)">
+    <span style="font-size:16px">📊</span>
+    <div><h3>7 Charts for Your Consideration</h3><p>Week 25 · All Segments · Min Lift 1.5</p></div>
+    <span class="ch-badge">MOCK DATA</span>
+  </div>
+
+  <div class="g2" style="margin-bottom:14px">
+    <div class="card">
+      <div class="ct">① Top Association Rules — Ranked by Lift</div>
+      <div class="cw h220"><canvas id="m4c1"></canvas></div>
+      <div class="ccap">Green = bundle-ready (Lift &gt;5). Blue = strong recommendation. Amber = monitor. Coffee→Beans and Shoes→Socks are top priorities.</div>
+    </div>
+    <div class="card">
+      <div class="ct">② Estimated Annual Revenue Impact — Top 6 Rule Pairs</div>
+      <div class="cw h220"><canvas id="m4c2"></canvas></div>
+      <div class="ccap">Revenue impact estimated from rule confidence × avg basket value × annual transaction volume. Coffee Bundle leads at $284K.</div>
+    </div>
+  </div>
+  <div class="g2" style="margin-bottom:14px">
+    <div class="card">
+      <div class="ct">③ Lift Stability — Top 3 Rules Over 12 Weeks</div>
+      <div class="cw h200"><canvas id="m4c3"></canvas></div>
+      <div class="ccap">All three rules are stable with minimal drift — low variance indicates genuine behavioural affinity, not seasonal coincidence.</div>
+    </div>
+    <div class="card">
+      <div class="ct">④ AOV Uplift by Deployment Channel</div>
+      <div class="cw h200"><canvas id="m4c4"></canvas></div>
+      <div class="ccap">PDP prompt delivers highest AOV uplift (+$12.40). Cart upsell and in-store adjacency also strong. Post-purchase is lowest but high volume.</div>
+    </div>
+  </div>
+  <div class="g3" style="margin-bottom:14px">
+    <div class="card">
+      <div class="ct">⑤ Category Cross-Sell Rate</div>
+      <div class="cw h200"><canvas id="m4c5"></canvas></div>
+      <div class="ccap">Kitchenware (44%) and Sporting (41%) have highest cross-category purchase rates. Strong bundle candidates.</div>
+    </div>
+    <div class="card">
+      <div class="ct">⑥ Bundle vs Non-Bundle Revenue Split</div>
+      <div class="cw h200"><canvas id="m4c6"></canvas></div>
+      <div class="ccap">Rules-driven bundles now account for 31% of revenue where active. Target: 40% by Q4 with broader deployment.</div>
+    </div>
+    <div class="card">
+      <div class="ct">⑦ Actionable Rules Count — Rolling 12 Weeks</div>
+      <div class="cw h200"><canvas id="m4c7"></canvas></div>
+      <div class="ccap">Rule count growing as catalogue expands and model window captures new products. Spike W9 reflects new season launch.</div>
+    </div>
+  </div>
+  <div class="ab"><ul>
+    <li><strong>Coffee Machine → Premium Beans (Lift 6.2×):</strong> Create bundle + test 12-month bean subscription at checkout. Est. AOV uplift +$34/transaction.</li>
+    <li>Yoga Mat → Water Bottle is new this week. Flag to merchandising for in-store co-placement and "complete your kit" digital prompt.</li>
+  </ul></div>
+</div>
+
+<!-- ═══ PRICING ════════════════════════════════════════════════════ -->
+<div class="panel" id="p-pr">
+  <div class="hero" style="margin-bottom:16px"><div><h1>Dynamic Pricing — Start-to-ML Roadmap</h1><p>A maturity journey. Start with rules, earn organisational trust, then introduce ML. Most failures come from skipping phases.</p></div></div>
+  <div class="ph-row" style="margin-bottom:16px">
+    <div class="ph ph-1"><div class="phn" style="color:#dc2626">Phase 1</div><div class="pht">Rule-Based</div><div class="phtime">Weeks 1–8</div><div class="phkey">Markdown rules · Clearance automation · Competitor price feed</div></div>
+    <div class="ph ph-2"><div class="phn" style="color:#d97706">Phase 2</div><div class="pht">Elasticity</div><div class="phtime">Months 2–4</div><div class="phkey">OLS regression · A/B price tests · Segment elasticity matrix</div></div>
+    <div class="ph ph-3"><div class="phn" style="color:#16a34a">Phase 3</div><div class="pht">ML Optimise</div><div class="phtime">Months 4–9</div><div class="phkey">XGBoost demand model · Price simulator · Human review queue</div></div>
+    <div class="ph ph-4"><div class="phn" style="color:#2563eb">Phase 4</div><div class="pht">Autonomous</div><div class="phtime">Month 9+</div><div class="phkey">Contextual bandits · RL agent · Real-time pipeline · Circuit breaker</div></div>
+  </div>
+  <div class="g2">
+    <div>
+      <div class="ck ok"><div style="font-size:14px">✓</div><div><strong>Start this quarter:</strong> Competitor price feed + automated clearance markdown rules. Immediate ROI + generates Phase 2 training data.</div></div>
+      <div class="ck ok"><div style="font-size:14px">✓</div><div><strong>Quick win:</strong> If stock age &gt;45 days → 15% markdown auto-trigger. Removes margin leakage from manual decisions.</div></div>
+      <div class="ck warn"><div style="font-size:14px">⚠</div><div><strong>Do not skip Phase 2.</strong> Running ML pricing without elasticity data = optimising blind. Phase 2 is the most underrated step.</div></div>
+      <div class="ck no"><div style="font-size:14px">✗</div><div><strong>No autonomous pricing</strong> until a price perception risk framework and rollback mechanism are in place.</div></div>
+    </div>
+    <div class="card">
+      <div class="ct">Pricing Maturity Self-Assessment</div>
+      <div class="cw h220"><canvas id="pr-mat"></canvas></div>
+      <div class="ccap">Score your current state per dimension. Gap to target defines Phase 1–2 roadmap priorities.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SIGNALS ═══════════════════════════════════════════════════ -->
+<div class="panel" id="p-sig">
+  <div class="sl">Current Signal Status — Week 25, Jun 2026</div>
+  <div class="sr red"><div class="sd red"></div><div class="st">Revenue Anomaly</div><div class="sdesc">W5 actual &gt;20% below forecast — supply disruption resolved</div><div class="sa red">RCA complete — monitor</div></div>
+  <div class="sr amber"><div class="sd amber"></div><div class="st">AOV Compression</div><div class="sdesc">7-day AOV down 4.5% vs target — promo mix shift</div><div class="sa amber">Cap discount depth 20%</div></div>
+  <div class="sr amber"><div class="sd amber"></div><div class="st">Champion Drift</div><div class="sdesc">180 Champions migrated to At-Risk this quarter</div><div class="sa amber">Win-back sequence live</div></div>
+  <div class="sr blue"><div class="sd blue"></div><div class="st">Uplift Window Open</div><div class="sdesc">Persuadable pool up 22% vs last campaign window</div><div class="sa blue">Deploy campaign this week</div></div>
+  <div class="sr green"><div class="sd green"></div><div class="st">Affinity Breakout</div><div class="sdesc">Coffee→Beans: Lift 6.2×, Support 3.1%</div><div class="sa green">Bundle live — homepage</div></div>
+  <div class="g2" style="margin-top:16px">
+    <div class="card">
+      <div class="ct">Revenue Anomaly Detection — 12 Weeks</div>
+      <div class="cw h220"><canvas id="sig-rev"></canvas></div>
+      <div class="ccap">W5 anomaly clearly visible. Residual flagged at 2.4σ. Classified as supply-side within 6 hours of alert firing.</div>
+    </div>
+    <div class="card">
+      <div class="ct">Alive Probability Trend — Champions vs At-Risk</div>
+      <div class="cw h220"><canvas id="sig-alive"></canvas></div>
+      <div class="ccap">At-Risk segment (orange) crossed 60% threshold this week — triggering win-back escalation protocol.</div>
+    </div>
+  </div>
+  <div class="sl" style="margin-top:16px">Attribution Workflow — When an Alert Fires</div>
+  <div class="wf">
+    <div class="ws hl" style="--ws-bg:#fef2f2;--ws-bd:#fca5a5"><div class="wn">01</div><div class="wt">Is it Real?</div><div class="wd">Check pipeline integrity. Rule out data errors first.</div></div>
+    <div class="ws"><div class="wn">02</div><div class="wt">Channel Split</div><div class="wd">Online, offline, or both? Root cause differs per channel.</div></div>
+    <div class="ws hl" style="--ws-bg:#fffbeb;--ws-bd:#fde68a"><div class="wn">03</div><div class="wt">Segment Split</div><div class="wd">Which segment? New Acquires vs Champions are different problems.</div></div>
+    <div class="ws"><div class="wn">04</div><div class="wt">External Factor?</div><div class="wd">Promo, weather, competitor, supply, news event.</div></div>
+    <div class="ws hl" style="--ws-bg:#fffbeb;--ws-bd:#fde68a"><div class="wn">05</div><div class="wt">Model vs Reality</div><div class="wd">Forecast wrong, or did reality shift? Update variable registry.</div></div>
+    <div class="ws hl" style="--ws-bg:var(--okl);--ws-bd:var(--okm)"><div class="wn">06</div><div class="wt">⚡ Owner + Action</div><div class="wd">One owner · one action · one deadline · logged.</div></div>
+  </div>
+</div>
+
+<!-- ═══ COMMUNICATE ═══════════════════════════════════════════════ -->
+<div class="panel" id="p-cm">
+  <div class="sl">Who Sees What</div>
+  <div class="g3" style="margin-bottom:14px;gap:10px">
+    <div class="stk"><div class="stk-head">C-Suite / Board</div><div class="stk-body"><div class="stk-show">Revenue vs forecast (1 number)</div><div class="stk-show">Top 3 risks + opportunities</div><div class="stk-show">Decisions required + deadline</div><div class="stk-hide">Model names, MAPE, p-values</div></div></div>
+    <div class="stk"><div class="stk-head">Marketing Lead</div><div class="stk-body"><div class="stk-show">Segment shift %, campaign ROI</div><div class="stk-show">CLV tier movement, next campaign brief</div><div class="stk-show">Win-back list + recommended offer</div><div class="stk-hide">Model parameters, coefficient tables</div></div></div>
+    <div class="stk"><div class="stk-head">Merch / Buyer</div><div class="stk-body"><div class="stk-show">Top affinity rules, AOV drivers</div><div class="stk-show">Demand forecast + confidence bands</div><div class="stk-show">Reorder signals, promo timing</div><div class="stk-hide">Algorithm names, residual plots</div></div></div>
+    <div class="stk"><div class="stk-head">Store / Ops</div><div class="stk-body"><div class="stk-show">This week vs last — one chart</div><div class="stk-show">RAG signal status only</div><div class="stk-show">One action, one owner name</div><div class="stk-hide">Everything else</div></div></div>
+    <div class="stk"><div class="stk-head">Analytics Team</div><div class="stk-body"><div class="stk-show">Full model diagnostics + backtests</div><div class="stk-show">Feature importance, residual plots</div><div class="stk-show">Drift metrics, cluster stability</div><div class="stk-hide" style="color:var(--muted)">Nothing — show everything</div></div></div>
+    <div class="stk" style="border:2px solid var(--navy)"><div class="stk-head" style="background:#1e3a5f">⏱ 15-Second Test</div><div class="stk-body"><p style="font-size:11px;color:var(--muted);line-height:1.6">Show to a non-analyst. If they cannot state the required action within 15 seconds — redesign before distributing.</p></div></div>
+  </div>
+  <div class="g2" style="margin-bottom:14px">
+    <div>
+      <div class="card" style="padding:0;overflow:hidden;margin-bottom:12px">
+        <div class="dd-head do">✓ Always Do</div>
+        <div class="dd-item">Chart title = the insight ("Revenue recovering" not "Revenue by Week")</div>
+        <div class="dd-item">Red = urgent · Amber = watch · Green = good · Blue = info</div>
+        <div class="dd-item">Show context always: vs last period, vs target, vs forecast</div>
+        <div class="dd-item">5 metrics max per view for non-technical audiences</div>
+        <div class="dd-item">White space is a design element — crowded ≠ thorough</div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="dd-head dont">✗ Always Remove</div>
+        <div class="dd-item">3D charts — distort values, add nothing</div>
+        <div class="dd-item">Pie charts with more than 3 slices</div>
+        <div class="dd-item">Dual Y-axes — almost always misleading</div>
+        <div class="dd-item">Model names as chart titles</div>
+        <div class="dd-item">Tables with more than 7 visible columns</div>
+      </div>
+    </div>
+    <div>
+      <div class="sl" style="margin-top:0">Dashboard Layout — F-Pattern Flow</div>
+      <div class="mock">
+        <div class="mock-row"><div class="mock-cell dark" style="flex:3">🔝 Headline — One KPI · One Alert · One Action</div></div>
+        <div class="mock-row">
+          <div class="mock-cell" style="background:#fef2f2;color:var(--c1)">Primary KPI<br>+ trend arrow</div>
+          <div class="mock-cell" style="background:#eff6ff;color:var(--c2)">Segment chart<br>or 2nd KPI</div>
+          <div class="mock-cell" style="background:#fffbeb;color:#d97706">RAG Scorecard<br>(signals only)</div>
+        </div>
+        <div class="mock-row">
+          <div class="mock-cell" style="flex:2;background:white">Forecast vs Actual — annotated line (spans 2 cols)</div>
+          <div class="mock-cell" style="background:#f5f3ff;color:var(--c3)">CLV Tier<br>Bar</div>
+        </div>
+        <div class="mock-row"><div class="mock-cell" style="flex:3;font-style:italic;color:var(--muted)">⬇ Expandable — hidden by default for non-technical users</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ METHODOLOGY ════════════════════════════════════════════════ -->
+<div class="panel" id="p-mth">
+  <div class="hero" style="margin-bottom:16px"><div><h1>Methodology &amp; Algorithm Reference</h1><p>Technical specification for review, validation, and scaling decisions. Covers algorithm selection, evaluation metrics, data requirements, and known limitations.</p></div><div class="hero-stats"><div class="hs"><div class="n">4</div><div class="l">Model Families</div></div><div class="hs"><div class="n">12</div><div class="l">Algorithms</div></div><div class="hs"><div class="n">18</div><div class="l">Eval Metrics</div></div></div></div>
+
+  <div class="sl">Algorithm Selection — When to Use What</div>
+  <div class="card" style="padding:0;overflow:hidden;margin-bottom:14px">
+    <table class="mth-tbl">
+      <thead><tr><th>Model</th><th>Primary Algorithm</th><th>When to Use</th><th>Alternative If</th><th>Eval Metric</th></tr></thead>
+      <tbody>
+        <tr><td>Forecasting</td><td>SARIMAX</td><td>Clear seasonal cycle + known exogenous inputs. Horizon 4–12W.</td><td>No seasonality → ARIMAX. 50+ features → LASSO/Elastic Net.</td><td>MAPE &lt;10% · Bias ≈ 0</td></tr>
+        <tr><td>Segmentation</td><td>K-Prototype</td><td>Mixed numeric + categorical features. 5–10 cluster range tested.</td><td>All numeric → K-Means. All categorical → K-Modes.</td><td>Silhouette &gt;0.65</td></tr>
+        <tr><td>Uplift</td><td>RF T-Learner</td><td>Large treatment group (&gt;1,000). Past campaign response data available.</td><td>Small treatment → X-Learner. No holdout → IPW correction.</td><td>Qini &gt;0.3 · AUUC</td></tr>
+        <tr><td>BTYD / CLV</td><td>BG/NBD + Γ-Γ</td><td>Non-subscription. &gt;18 months history. Alive probability needed.</td><td>Subscription → contract model. Low history → Pareto/NBD.</td><td>CLV MAE on holdout</td></tr>
+        <tr><td>Affinity</td><td>FP-Growth</td><td>Large catalogue + high transaction volume. Segment-level rules needed.</td><td>Very small catalogue → Apriori. Personalised → collaborative filter.</td><td>Lift &gt;1.5 · Qini-like</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sl">Current Tool Status &amp; Scaling Priorities</div>
+  <div class="card" style="padding:0;overflow:hidden;margin-bottom:14px">
+    <table class="mth-tbl">
+      <thead><tr><th>Model</th><th>Status</th><th>Data Ready?</th><th>Python Library</th><th>Next Scaling Step</th></tr></thead>
+      <tbody>
+        <tr><td>Sales Forecast</td><td><span class="tag" style="background:#fffbeb;color:#d97706">In Progress</span></td><td style="color:var(--ok)">✓ Partial</td><td style="font-family:monospace;font-size:11px">statsmodels · pmdarima · scikit-learn</td><td>Add exogenous feeds. Automate retraining pipeline.</td></tr>
+        <tr><td>Segmentation</td><td><span class="tag" style="background:#fffbeb;color:#d97706">In Progress</span></td><td style="color:var(--ok)">✓ Partial</td><td style="font-family:monospace;font-size:11px">kmodes · umap-learn · yellowbrick</td><td>Complete Block D (CLV inputs). Automate quarterly re-cluster.</td></tr>
+        <tr><td>Uplift Model</td><td><span class="tag" style="background:#fef2f2;color:#dc2626">Planned</span></td><td style="color:var(--c1)">✗ Need holdout</td><td style="font-family:monospace;font-size:11px">causalml · scikit-uplift · xgboost</td><td>Implement A/B holdout in next campaign. Build training dataset.</td></tr>
+        <tr><td>BTYD / CLV</td><td><span class="tag" style="background:#fef2f2;color:#dc2626">Planned</span></td><td style="color:var(--ok)">✓ Ready</td><td style="font-family:monospace;font-size:11px">lifetimes · pymc · pandas</td><td>Run BG/NBD on historical data. Validate vs known churners.</td></tr>
+        <tr><td>FP-Growth Affinity</td><td><span class="tag" style="background:#f0fdf4;color:var(--ok)">Live</span></td><td style="color:var(--ok)">✓ Complete</td><td style="font-family:monospace;font-size:11px">mlxtend · efficient-apriori</td><td>Add segment-aware rules. Deploy to in-store recommendation engine.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="g2">
+    <div>
+      <div class="sl" style="margin-top:0">Scaling Priorities — Next 6 Months</div>
+      <div class="ck ok"><div>1</div><div><strong>MLOps pipeline:</strong> Retrain → validate → deploy without manual intervention. Target: &lt;4hr from data refresh to scored output.</div></div>
+      <div class="ck ok"><div>2</div><div><strong>Feature Store:</strong> Centralised, versioned features shared across all 4 models. Eliminates duplicate computation.</div></div>
+      <div class="ck ok"><div>3</div><div><strong>Real-time scoring:</strong> Move Forecast + CLV from batch to streaming for high-velocity events (flash sales, viral).</div></div>
+      <div class="ck warn"><div>4</div><div><strong>A/B holdout infrastructure:</strong> Engineering work required to enforce campaign holdout at send time — Uplift model prerequisite.</div></div>
+      <div class="ck warn"><div>5</div><div><strong>Model monitoring:</strong> MAPE drift, Silhouette drift, Lift stability — weekly auto-alert on degradation.</div></div>
+      <div class="ck no"><div>6</div><div><strong>Dynamic pricing Phase 2:</strong> Do not begin until competitor price feed is live and Phase 1 data accrued.</div></div>
+    </div>
+    <div class="card">
+      <div class="ct">Scaling Maturity — Current vs Target State</div>
+      <div class="cw h300"><canvas id="mth-radar"></canvas></div>
+      <div class="ccap">Radar shows current maturity (blue) vs 12-month target (dashed). Biggest gaps: real-time scoring and A/B infrastructure.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DEFAULTS ──────────────────────────────────
+Chart.defaults.font.family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
+Chart.defaults.font.size=11;Chart.defaults.color='#64748b';Chart.defaults.plugins.legend.display=false;
+
+// ── SHARED DATA ───────────────────────────────
+const W12=['W1','W2','W3','W4','W5','W6','W7','W8','W9▶','W10▶','W11▶','W12▶'];
+const W8=['W1','W2','W3','W4','W5','W6','W7','W8'];
+const SEG=['Champions','HV Growers','Loyal Narrow','Promo Hunters','At-Risk','Dormant','New Acquires'];
+const SC=['#d69e2e','#38a169','#3182ce','#e9c46a','#f6ad55','#fc8181','#9f7aea'];
+const actual12=[420,445,410,462,298,481,514,497,null,null,null,null];
+const fc12=[418,447,413,460,415,479,510,496,522,541,508,537];
+const uCI=[null,null,null,null,null,null,null,null,574,595,560,589];
+const lCI=[null,null,null,null,null,null,null,null,470,487,456,485];
+const aovW=[78.2,75.4,80.1,74.8,71.2,73.5,76.4,72.1];
+const segSz=[2400,4100,6800,8200,3100,5600,9400];
+const segCLV=[1850,920,640,310,580,180,240];
+
+// ── HELPER FUNCTIONS ──────────────────────────
+function mk(id,type,data,opts={}){
+  const c=document.getElementById(id);if(!c)return;
+  return new Chart(c,{type,data,options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false},...(opts.plugins||{})},
+    scales:{x:{grid:{display:false}},...(opts.scales||{})},
+    ...(opts.extra||{})}});
+}
+function yFmt(cb){return{ticks:{callback:cb},grid:{color:'rgba(0,0,0,0.04)'}}}
+function lnDs(label,data,color,dash=false,opts={}){
+  return{label,data,borderColor:color,borderWidth:2,borderDash:dash?[5,4]:[],
+    pointRadius:3,pointBackgroundColor:color,tension:.4,fill:false,...opts};
+}
+function barDs(label,data,colors,opts={}){
+  return{label,data,backgroundColor:Array.isArray(colors)?colors:data.map(()=>colors),
+    borderRadius:5,borderSkipped:false,...opts};
+}
+
+// ── OVERVIEW ──────────────────────────────────
+mk('ov-rev','line',{labels:W12,datasets:[
+  {label:'CI',data:uCI,borderColor:'transparent',backgroundColor:'rgba(239,68,68,.1)',fill:'+1',pointRadius:0,tension:.4},
+  {label:'CI2',data:lCI,borderColor:'transparent',fill:false,pointRadius:0,tension:.4},
+  lnDs('Forecast',fc12,'#ef4444',true),lnDs('Actual',actual12,'#0f172a')
+]},{plugins:{legend:{display:true,position:'top',labels:{boxWidth:9,font:{size:10}}}},
+   scales:{x:{grid:{display:false}},y:yFmt(v=>'$'+v+'k')}});
+
+mk('ov-cov','doughnut',{
+  labels:['Forecast (Merch)','Segmentation (Mktg)','Affinity (Digital)','Uplift (CRM)','Unmodelled'],
+  datasets:[{data:[22,20,18,24,16],backgroundColor:['#ef4444','#2563eb','#0891b2','#7c3aed','#e2e8f0'],borderWidth:3,borderColor:'#fff'}]
+},{extra:{cutout:'62%'},plugins:{legend:{display:true,position:'right',labels:{boxWidth:9,padding:8,font:{size:10}}}}});
+
+mk('ov-seg','bar',{labels:SEG,datasets:[
+  barDs('Customers',segSz,SC.map(c=>c+'aa'),{borderColor:SC,borderWidth:1.5,yAxisID:'y'}),
+  {...lnDs('CLV',segCLV,'#0f172a'),pointBackgroundColor:SC,pointRadius:5,yAxisID:'y2'}
+]},{plugins:{legend:{display:true,position:'top',labels:{boxWidth:9,font:{size:10}}}},
+   scales:{x:{grid:{display:false}},y:{position:'left',...yFmt(v=>v.toLocaleString())},
+           y2:{position:'right',ticks:{callback:v=>'$'+v},grid:{display:false}}}});
+
+// ── M1 CHARTS ─────────────────────────────────
+// ① Forecast vs Actual
+mk('m1c1','line',{labels:W12,datasets:[
+  {label:'CI',data:uCI,borderColor:'transparent',backgroundColor:'rgba(239,68,68,.1)',fill:'+1',pointRadius:0,tension:.4},
+  {label:'CI2',data:lCI,borderColor:'transparent',fill:false,pointRadius:0,tension:.4},
+  lnDs('Forecast',fc12,'#ef4444',true,{pointRadius:2}),
+  lnDs('Actual',actual12,'#0f172a',false,{pointRadius:4,pointBackgroundColor:actual12.map((_,i)=>i===4?'#ef4444':'#0f172a')})
+]},{plugins:{legend:{display:true,position:'top',labels:{boxWidth:9,font:{size:10}}}},
+   scales:{x:{grid:{display:false}},y:yFmt(v=>'$'+v+'k')}});
+
+// ② Revenue by Channel
+mk('m1c2','line',{labels:W8,datasets:[
+  lnDs('Online',[210,225,198,235,148,244,261,252],'#2563eb'),
+  lnDs('Offline',[156,168,162,174,112,185,196,189],'#16a34a'),
+  lnDs('Click & Collect',[54,52,50,53,38,52,57,56],'#d97706')
+]},{plugins:{legend:{display:true,position:'top',labels:{boxWidth:9,font:{size:10}}}},
+   scales:{x:{grid:{display:false}},y:yFmt(v=>'$'+v+'k')}});
+
+// ③ AOV vs Target
+mk('m1c3','bar',{labels:W8,datasets:[
+  {type:'line',label:'Target $79',data:Array(8).fill(79),borderColor:'#94a3b8',borderDash:[4,3],borderWidth:1.5,pointRadius:0},
+  barDs('AOV',aovW,aovW.map(v=>v>=79?'rgba(22,163,74,.75)':'rgba(239,68,68,.65)'))
+]},{plugins:{legend:{display:true,position:'top',labels:{boxWidth:9,font:{size:10}}}},
+   scales:{x:{grid:{display:false}},y:{min:65,max:85,...yFmt(v=>'$'+v)}}});
+
+// ④ AOV Decomposition (stacked)
+mk('m1c4','bar',{labels:W8,datasets:[
+  barDs('Units/Basket',[45,47,44,48,42,46,50,47],'rgba(239,68,68,.8)',{stack:'a'}),
+  barDs('Avg Unit Price',[22,21,23,21,20,20,22,21],'rgba(249,115,22,.8)',{stack:'a'}),
+  barDs('Mix Index',[11,7,13,6,9,8,4,4],'rgba(22,163,74,.8)',{stack:'a'})
+]},{plugins:{legend:{display:true,position:'top',labels:{boxWidth:9,font:{size:10}}}},
+   extra:{indexAxis:''},scales:{x:{grid:{display:false},stacked:true},y:{stacked:true,...yFmt(v=>'$'+v)}}});
+
+// ⑤ Feature Importance
+mk('m1c5','bar',{
+  labels:['Payday Cycle','Promotions','Weather Index','Web Sessions','Competitor Price'],
+  datasets:[barDs('Importance',[0.42,0.38,0.21,0.18,0.14],['#ef4444','#ef4444','#fca5a5','#fca5a5','#fca5a5'])]
+},{extra:{indexAxis:'y'},scales:{y:{grid:{display:false}},x:yFmt(v=>v.toFixed(2))}});
+
+// ⑥ MAPE by Horizon
+mk('m1c6','bar',{
+  labels:['1 Week','2 Weeks','4 Weeks','8 Weeks','12 Weeks'],
+  datasets:[barDs('MAPE',[4.2,6.1,7.4,10.8,14.2],[4.2,6.1,7.4,10.8,14.2].map(v=>v<10?'rgba(22,163,74,.75)':v<15?'rgba(217,119,6,.75)':'rgba(239,68,68,.75)'))]
+},{scales:{x:{grid:{display:false}},y:{...yFmt(v=>v+'%'),
+  afterDatasetsDraw:chart=>{
+    const ctx=chart.ctx,ds=chart.data.datasets[0],meta=chart.getDatasetMeta(0);
+    if(!meta.data.length)return;
+    const y=chart.scales.y.getPixelForValue(15);
+    ctx.save();ctx.strokeStyle='#ef4444';ctx.setLineDash([4,3]);ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(chart.chartArea.left,y);ctx.lineTo(chart.chartArea.right,y);ctx.stroke();ctx.restore();
+  }}}});
+
+// ⑦ Anomaly Z-Score
+mk('m1c7','line',{labels:W12,datasets:[
+  {label:'Alert 2σ',data:Array(12).fill(2),borderColor:'#ef4444',borderDash:[4,3],borderWidth:1.5,pointRadius:0},
+  lnDs('Z-Score',[0.4,0.8,0.6,1.1,2.9,0.7,0.5,0.9,null,null,null,null],'#0f172a',false,
+    {pointRadius:4,pointBackgroundColor:[0.4,0.8,0.6,1.1,2.9,0.7,0.5,0.9].map(v=>v>2?'#ef4444':'#0f172a')})
+]},{plugins:{legend:{display:true,position:'top',labels:{boxWidth:9,font:{size:10}}}},
+   scales:{x:{grid:{display:false}},y:{min:0,max:3.5,...yFmt(v=>v+'σ')}}});
+
+// ── M2 CHARTS ─────────────────────────────────
+// ① Size vs CLV
+mk('m2c1','bar',{labels:SEG,datasets:[
+  barDs('Customers',segSz,SC.map(c=>c+'aa'),{borderColor:SC,borderWidth:1.5,yAxisID:'y'}),
+  {...lnDs('CLV',segCLV,'#0f172a'),type:'line',pointBackgroundColor:SC,pointRadius:5,yAxisID:'y2'}
+]},{plugins:{legend:{display:true,position:'top',labels:{boxWidth:9,font:{size:10}}}},
+   scales:{x:{grid:{display:false}},y:{position:'left',...yFmt(v=>v.toLocaleString())},
+           y2:{position:'right',ticks:{callback:v=>'$'+v},grid:{display:false}}}});
+
+// ② Migration
+const migData=[-180,310,120,-40,-180,-210,1240];
+mk('m2c2','bar',{labels:SEG,datasets:[barDs('Net Change',migData,migData.map(v=>v>=0?'rgba(22,163,74,.75)':'rgba(239,68,68,.7)'))]},
+{scales:{x:{grid:{display:false}},y:yFmt(v=>(v>0?'+':'')+v.toLocaleString())}});
+
+// ③ Channel Mix (stacked)
+mk('m2c3','bar',{labels:SEG,datasets:[
+  barDs('Online',[35,42,28,55,40,38,68],'rgba(37,99,235,.8)',{stack:'a'}),
+  barDs('Offline',[48,41,58,32,45,48,18],'rgba(22,163,74,.8)',{stack:'a'}),
+  barDs('App',[17,17,14,13,15,14,14],'rgba(139,92,246,.8)',{stack:'a'})
+]},{plugins:{legend:{display:true,position:'top',labels:{boxWidth:9,font:{size:10}}}},
+   scales:{x:{grid:{display:false},stacked:true},y:{stacked:true,...yFmt(v=>v+'%')}}});
+
+// ④ CLV Percentile Bands
+mk('m2c4','bar',{labels:SEG,datasets:[
+  barDs('P25',[920,440,280,110,240,60,80],'rgba(148,163,184,.5)',{stack:'a',borderSkipped:false}),
+  barDs('Median',[720,340,280,150,250,90,110],'rgba(37,99,235,.7)',{stack:'a',borderSkipped:false}),
+  barDs('P75',[1160,460,330,230,350,140,190],'rgba(22,163,74,.5)',{stack:'a',borderSkipped:false})
+]},{plugins:{legend:{display:true,position:'top',labels:{boxWidth:9,font:{size:10}}}},
+   scales:{x:{grid:{display:false},stacked:true},y:{stacked:true,...yFmt(v=>'$'+v.toLocaleString())}}});
+
+// ⑤ Churn Risk
+const churnD=[8,12,18,28,45,72,31];
+mk('m2c5','bar',{labels:SEG,datasets:[barDs('Churn Risk %',churnD,churnD.map(v=>v>=50?'rgba(239,68,68,.8)':v>=30?'rgba(249,115,22,.8)':'rgba(22,163,74,.75)'))]},
+{scales:{x:{grid:{display:false}},y:{...yFmt(v=>v+'%'),max:80}}});
+
+// ⑥ Revenue Contribution (donut)
+mk('m2c6','doughnut',{
+  labels:SEG,
+  datasets:[{data:[34,21,16,9,12,4,4],backgroundColor:SC,borderWidth:3,borderColor:'#fff'}]
+},{extra:{cutout:'60%'},plugins:{legend:{display:true,position:'right',labels:{boxWidth:9,padding:8,font:{size:10}}}}});
+
+// ⑦ Silhouette by k
+mk('m2c7','line',{
+  labels:['k=5','k=6','k=7','k=8','k=9','k=10'],
+  datasets:[lnDs('Silhouette Score',[0.51,0.58,0.71,0.68,0.63,0.59],'#2563eb',false,
+    {pointRadius:5,pointBackgroundColor:['#94a3b8','#94a3b8','#2563eb','#94a3b8','#94a3b8','#94a3b8'],
+     pointStyle:['circle','circle','star','circle','circle','circle']})]
+},{scales:{x:{grid:{display:false}},y:{min:.4,max:.8,...yFmt(v=>v.toFixed(2))}}});
+
+// ── M3 CHARTS ─────────────────────────────────
+// ① Uplift Donut
+mk('m3c1','doughnut',{
+  labels:['Persuadables ✓','Sure Things','Lost Causes','Sleeping Dogs ⚠'],
+  datasets:[{data:[28,34,24,14],backgroundColor:['#16a34a','#2563eb','#a0aec0','#ef4444'],borderWidth:3,borderColor:'#fff'}]
+},{extra:{cutout:'62%'},plugins:{legend:{display:true,position:'right',labels:{boxWidth:9,padding:10,font:{size:11}}}}});
+
+// ② Qini Curve
+const qX=[0,10,20,30,40,50,60,70,80,90,100];
+mk('m3c2','line',{labels:qX,datasets:[
+  {label:'Random',data:qX,borderColor:'#94a3b8',borderDash:[4,3],borderWidth:1.5,pointRadius:0,tension:0},
+  lnDs('Uplift Model',[0,18,32,43,52,59,65,72,78,85,100],'#7c3aed',false,
+    {fill:'origin',backgroundColor:'rgba(124,58,237,.08)'})
+]},{plugins:{legend:{display:true,position:'top',labels:{boxWidth:9,font:{size:10}}}},
+   scales:{x:{grid:{display:false},title:{display:true,text:'% Population Targeted',font:{size:9}}},
+           y:{...yFmt(v=>v+'%'),title:{display:true,text:'% Uplift Captured',font:{size:9}}}}});
+
+// ③ CLV Tiers
+mk('m3c3','bar',{
+  labels:['Tier 1 (Top 20%)','Tier 2 (Mid 40%)','Tier 3 (Bot 40%)'],
+  datasets:[
+    barDs('CLV 12M',[1840,520,145],['rgba(212,175,55,.85)','rgba(49,130,206,.8)','rgba(160,174,192,.8)']),
+    barDs('CLV 36M',[4920,1280,310],['rgba(212,175,55,.3)','rgba(49,130,206,.3)','rgba(160,174,192,.3)'])
+  ]},{plugins:{legend:{display:true,position:'top',labels:{boxWidth:9,font:{size:10}}}},
+     scales:{x:{grid:{display:false}},y:yFmt(v=>'$'+v.toLocaleString())}});
+
+// ④ Campaign ROI
+mk('m3c4','bar',{
+  labels:['May Promo','Jun Loyalty','Jul Clear.','Aug Launch'],
+  datasets:[
+    barDs('No Model',[1.4,1.9,1.6,2.1],'rgba(239,68,68,.6)'),
+    barDs('With Uplift Model',[2.8,3.8,3.1,4.2],'rgba(22,163,74,.8)')
+  ]},{plugins:{legend:{display:true,position:'top',labels:{boxWidth:9,font:{size:10}}}},
+     scales:{x:{grid:{display:false}},y:{...yFmt(v=>v+'×'),min:0,max:5}}});
+
+// ⑤ Alive Probability
+const aliveD=[91,84,78,52,57];
+mk('m3c5','bar',{labels:SEG.slice(0,5),datasets:[
+  barDs('Alive Prob',aliveD,aliveD.map(v=>v>=60?'rgba(22,163,74,.8)':'rgba(239,68,68,.8)'))
+]},{scales:{x:{grid:{display:false}},y:{min:0,max:100,...yFmt(v=>v+'%')}}});
+
+// ⑥ Win-Back Rate
+mk('m3c6','bar',{
+  labels:['Champions','HV Growers','Loyal Narrow','At-Risk'],
+  datasets:[barDs('Win-Back Rate',[44,38,29,18],[44,38,29,18].map(v=>v>=30?'rgba(22,163,74,.8)':'rgba(217,119,6,.8)'))]
+},{scales:{x:{grid:{display:false}},y:{...yFmt(v=>v+'%'),max:55}}});
+
+// ⑦ Incremental Revenue by Campaign
+mk('m3c7','line',{
+  labels:['C1','C2','C3','C4','C5','C6'],
+  datasets:[lnDs('Incremental Revenue ($K)',[84,96,68,112,76,142],'#7c3aed',false,
+    {fill:'origin',backgroundColor:'rgba(124,58,237,.08)',pointRadius:5})]
+},{scales:{x:{grid:{display:false}},y:yFmt(v=>'$'+v+'K')}});
+
+// ── M4 CHARTS ─────────────────────────────────
+const ruleLabels=['Coffee→Beans','Shoes→Socks','Yoga→Bottle','Dress→Belt','Skincare→Toner','Backpack→Sleeve','Frypan→Utensils','Planner→Pen'];
+const liftVals=[6.2,4.7,3.8,3.1,2.9,2.6,2.4,1.8];
+
+// ① Top Rules by Lift
+mk('m4c1','bar',{labels:ruleLabels,datasets:[
+  barDs('Lift',liftVals,liftVals.map(v=>v>=5?'rgba(22,163,74,.85)':v>=3?'rgba(37,99,235,.75)':'rgba(217,119,6,.75)'))
+]},{extra:{indexAxis:'y'},
+   scales:{y:{grid:{display:false}},x:yFmt(v=>v+'×')}});
+
+// ② Revenue Impact
+mk('m4c2','bar',{
+  labels:['Coffee Bundle','Shoe+Sock Pack','Yoga Kit','Skincare Set','Sport Bundle','Kitchen Pack'],
+  datasets:[barDs('Revenue Impact ($K)',[284,196,142,118,94,76],
+    [284,196,142,118,94,76].map((_,i)=>i<2?'rgba(22,163,74,.85)':i<4?'rgba(37,99,235,.75)':'rgba(217,119,6,.75)'))]
+},{extra:{indexAxis:'y'},
+   scales:{y:{grid:{display:false}},x:yFmt(v=>'$'+v+'K')}});
+
+// ③ Lift Stability
+mk('m4c3','line',{labels:W12,datasets:[
+  lnDs('Coffee→Beans',[5.8,6.0,6.1,6.2,6.0,6.3,6.2,6.4,6.2,6.1,6.3,6.2],'#16a34a'),
+  lnDs('Shoes→Socks',[4.3,4.5,4.6,4.7,4.4,4.8,4.7,4.6,4.8,4.7,4.6,4.7],'#2563eb'),
+  lnDs('Yoga→Bottle',[3.4,3.6,3.7,3.8,3.5,3.9,3.8,3.9,3.8,3.7,3.9,3.8],'#d97706')
+]},{plugins:{legend:{display:true,position:'top',labels:{boxWidth:9,font:{size:10}}}},
+   scales:{x:{grid:{display:false}},y:{min:2,max:7,...yFmt(v=>v+'×')}}});
+
+// ④ AOV Uplift by Channel
+mk('m4c4','bar',{
+  labels:['PDP Prompt','Cart Upsell','Post-Purchase','In-Store','Loyalty App'],
+  datasets:[barDs('AOV Uplift ($)',[12.4,8.8,6.2,9.1,7.3],
+    [12.4,8.8,6.2,9.1,7.3].map(v=>v>=10?'rgba(22,163,74,.85)':'rgba(37,99,235,.75)'))]
+},{scales:{x:{grid:{display:false}},y:yFmt(v=>'$'+v)}});
+
+// ⑤ Category Cross-Sell Rate
+mk('m4c5','bar',{
+  labels:['Kitchenware','Sporting','Electronics','Beauty','Footwear','Accessories','Apparel'],
+  datasets:[barDs('Cross-Sell Rate',[44,41,38,35,31,28,22],
+    [44,41,38,35,31,28,22].map(v=>v>=40?'rgba(22,163,74,.85)':v>=30?'rgba(37,99,235,.75)':'rgba(217,119,6,.75)'))]
+},{extra:{indexAxis:'y'},
+   scales:{y:{grid:{display:false}},x:yFmt(v=>v+'%')}});
+
+// ⑥ Bundle vs Non-Bundle Revenue
+mk('m4c6','doughnut',{
+  labels:['Bundle-Driven Revenue','Non-Bundle Revenue'],
+  datasets:[{data:[31,69],backgroundColor:['rgba(8,145,178,.85)','#e2e8f0'],borderWidth:3,borderColor:'#fff'}]
+},{extra:{cutout:'62%'},plugins:{legend:{display:true,position:'right',labels:{boxWidth:9,padding:10,font:{size:11}}}}});
+
+// ⑦ Actionable Rules Over Time
+mk('m4c7','line',{labels:W12.map((_,i)=>'W'+(i+1)),datasets:[
+  lnDs('Actionable Rules (Lift>1.5)',[268,275,280,289,272,295,302,298,312,308,315,312],'#0891b2',false,
+    {fill:'origin',backgroundColor:'rgba(8,145,178,.08)',pointRadius:3})
+]},{scales:{x:{grid:{display:false}},y:{min:240,...yFmt(v=>v)}}});
+
+// ── PRICING ───────────────────────────────────
+mk('pr-mat','radar',{
+  labels:['Price Data','Competitor Intel','Elasticity Model','Rule Engine','A/B Testing','ML Pipeline','Real-Time Scoring'],
+  datasets:[
+    {label:'Current',data:[70,40,20,65,30,10,5],backgroundColor:'rgba(37,99,235,.15)',borderColor:'#2563eb',borderWidth:2,pointRadius:3,pointBackgroundColor:'#2563eb'},
+    {label:'12M Target',data:[90,80,75,85,80,65,50],backgroundColor:'rgba(22,163,74,.08)',borderColor:'#16a34a',borderWidth:1.5,borderDash:[4,3],pointRadius:2,pointBackgroundColor:'#16a34a'}
+  ]},{extra:{},plugins:{legend:{display:true,position:'top',labels:{boxWidth:9,font:{size:10}}}},
+     scales:{r:{min:0,max:100,ticks:{stepSize:20},grid:{color:'rgba(0,0,0,.06)'}}}});
+
+// ── SIGNALS ───────────────────────────────────
+mk('sig-rev','line',{labels:W12,datasets:[
+  {label:'CI',data:uCI,borderColor:'transparent',backgroundColor:'rgba(239,68,68,.08)',fill:'+1',pointRadius:0,tension:.4},
+  {label:'CI2',data:lCI,borderColor:'transparent',fill:false,pointRadius:0,tension:.4},
+  lnDs('Forecast',fc12,'#ef4444',true,{pointRadius:0}),
+  lnDs('Actual',actual12,'#0f172a',false,{pointRadius:4,pointBackgroundColor:actual12.map((_,i)=>i===4?'#ef4444':'#0f172a')})
+]},{plugins:{legend:{display:true,position:'top',labels:{boxWidth:9,font:{size:10}}}},
+   scales:{x:{grid:{display:false}},y:yFmt(v=>'$'+v+'k')}});
+
+mk('sig-alive','line',{labels:W8,datasets:[
+  {label:'Threshold 60%',data:Array(8).fill(60),borderColor:'#ef4444',borderDash:[4,3],borderWidth:1.5,pointRadius:0},
+  lnDs('Champions',[94,93,92,91,90,91,90,91],'#d69e2e'),
+  lnDs('At-Risk',[74,71,68,65,62,59,57,55],'#f97316')
+]},{plugins:{legend:{display:true,position:'top',labels:{boxWidth:9,font:{size:10}}}},
+   scales:{x:{grid:{display:false}},y:{min:40,max:100,...yFmt(v=>v+'%')}}});
+
+// ── METHODOLOGY ───────────────────────────────
+mk('mth-radar','radar',{
+  labels:['Forecasting','Segmentation','Uplift Model','BTYD / CLV','FP-Growth','MLOps','Real-Time','A/B Infra'],
+  datasets:[
+    {label:'Current',data:[55,50,20,25,80,30,15,10],backgroundColor:'rgba(37,99,235,.15)',borderColor:'#2563eb',borderWidth:2,pointRadius:3,pointBackgroundColor:'#2563eb'},
+    {label:'12M Target',data:[85,85,75,80,90,80,70,75],backgroundColor:'rgba(22,163,74,.08)',borderColor:'#16a34a',borderWidth:1.5,borderDash:[4,3],pointRadius:2,pointBackgroundColor:'#16a34a'}
+  ]},{extra:{},plugins:{legend:{display:true,position:'top',labels:{boxWidth:9,font:{size:10}}}},
+     scales:{r:{min:0,max:100,ticks:{stepSize:20},grid:{color:'rgba(0,0,0,.06)'}}}});
+
+// ── TAB SWITCH ────────────────────────────────
+function show(id,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('p-'+id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>
